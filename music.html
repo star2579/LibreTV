@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>落雪音乐 · 网页版</title>
+<style>
+body{margin:0;background:#101418;color:#e8ecf1;font-family:sans-serif;padding-bottom:120px}
+header{padding:14px 16px 6px;font-size:22px;font-weight:bold}
+.sub{padding:0 16px 10px;color:#8b95a3;font-size:13px}
+.bar{display:flex;gap:8px;padding:6px 16px}
+.bar input{flex:1;font-size:18px;padding:12px;border-radius:10px;border:1px solid #2a323c;background:#1a2027;color:#fff}
+.bar button{font-size:18px;padding:12px 20px;border-radius:10px;border:0;background:#1db954;color:#fff}
+.tabs{display:flex;gap:8px;padding:8px 16px}
+.tabs button{flex:1;font-size:17px;padding:10px;border-radius:10px;border:1px solid #2a323c;background:#1a2027;color:#aeb8c4}
+.tabs button.on{background:#1db954;color:#fff;border-color:#1db954}
+.qual{display:flex;gap:8px;padding:2px 16px 6px;align-items:center}
+.qual span{font-size:14px;color:#8b95a3}
+.qual button{font-size:15px;padding:8px 14px;border-radius:999px;border:1px solid #2a323c;background:#171d24;color:#cfd8e3}
+.qual button.on{background:#f5c542;color:#111;border-color:#f5c542;font-weight:bold}
+.charts{display:flex;gap:8px;padding:2px 16px 8px;flex-wrap:wrap}
+.charts button{font-size:15px;padding:9px 14px;border-radius:999px;border:1px solid #2a323c;background:#171d24;color:#cfd8e3}
+#msg{padding:4px 16px;color:#f5c542;font-size:14px;min-height:18px}
+.item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #1d242d;cursor:pointer}
+.item img{width:52px;height:52px;border-radius:8px;object-fit:cover;background:#222}
+.item .t{font-size:17px}
+.item .a{font-size:13px;color:#8b95a3;margin-top:2px}
+.item.cur .t{color:#1db954}
+.badge{font-size:11px;color:#f5c542;border:1px solid #f5c542;border-radius:6px;padding:1px 5px;margin-left:6px}
+.fav{margin-left:auto;flex-shrink:0;font-size:23px;padding:8px 6px;color:#5b6673}
+.fav.on{color:#ff4d6d}
+#viewbar{padding:2px 16px 6px;color:#8b95a3;font-size:14px;display:none}
+#viewbar button{font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid #2a323c;background:#171d24;color:#cfd8e3;margin-left:8px}
+#lrc{padding:8px 16px;font-size:15px;line-height:1.9;color:#77808d;max-height:150px;overflow:hidden;text-align:center}
+#lrc .on{color:#fff;font-size:17px}
+#player{position:fixed;left:0;right:0;bottom:0;background:#171d24;border-top:1px solid #2a323c;padding:10px 14px}
+#player .row{display:flex;align-items:center;gap:12px}
+#player img{width:56px;height:56px;border-radius:8px;object-fit:cover;background:#222}
+#ptitle{font-size:17px}
+#psinger{font-size:13px;color:#8b95a3}
+.ctl{display:flex;gap:10px;margin-left:auto}
+.ctl button{width:58px;height:58px;border-radius:50%;border:0;background:#232b34;color:#fff;font-size:22px}
+.ctl button.main{background:#1db954;font-size:26px}
+#prog{width:100%;margin-top:8px;height:26px}
+</style>
+</head>
+<body>
+<header>落雪音乐 · 网页版</header>
+<div class="sub">网易云非 VIP 歌曲可达 320k / 无损 FLAC；VIP 歌曲自动回落 128k。QQ 音乐付费歌可能只有试听。</div>
+<div class="bar"><input id="q" placeholder="搜歌名 / 歌手"><button id="go">搜索</button></div>
+<div class="tabs"><button id="tabNE" class="on">网易云</button><button id="tabTX">QQ音乐</button></div>
+<div class="qual"><span>音质</span><button id="q320" class="on">高音质 320k</button><button id="qFLAC">无损 FLAC</button><span>FLAC 单曲几十 MB，起播慢</span></div>
+<div class="charts"><button data-chart="3778678">网易热歌榜</button><button data-chart="3779629">网易新歌榜</button><button data-chart="19723756">网易飙升榜</button></div>
+  <div class="charts"><button data-chart="2945028696">华语经典老歌</button><button data-chart="14132177647">粤语金曲</button><button data-chart="13855478641">车载DJ</button><button data-chart="8580356200">开车KTV</button><button data-chart="8448080200">轻音乐助眠</button><button data-chart="6686195784">民谣</button><button data-chart="5460985377">摇滚</button><button data-chart="60198">欧美Billboard</button></div>
+<div class="charts"><button id="btnFav">❤ 自选歌单</button><button id="btnHist">🕘 播放记录</button></div>
+<div id="viewbar"></div>
+<div id="msg"></div>
+<div id="lrc"></div>
+<div id="list"></div>
+<div id="player">
+<div class="row">
+<img id="pcover" alt="">
+<div><div id="ptitle">未播放</div><div id="psinger">从列表点一首歌</div></div>
+<div class="ctl"><button id="prev">⏮</button><button id="play" class="main">▶</button><button id="next">⏭</button></div>
+</div>
+<input id="prog" type="range" min="0" max="1000" value="0">
+</div>
+<audio id="au"></audio>
+<script>
+var VK='https://api.vkeys.cn/v2/music/';
+var MT='https://api.injahow.cn/meting/';
+var GD='https://music-api.gdstudio.xyz/api.php';
+var SRC='netease';
+var Q='320';
+var queue=[], cur=-1, lrcLines=[], playSeq=0;
+var au=document.getElementById('au');
+function $(id){return document.getElementById(id);}
+function msg(t){$('msg').textContent=t||'';}
+function https(u){return u?u.replace(/^http:\/\//,'https://'):u;}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+var FAV=[], HIST=[], view='queue';
+function lsGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):[];}catch(e){return[];}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+FAV=lsGet('mus_fav'); HIST=lsGet('mus_hist');
+function sameSong(a,b){return a&&b&&a.kind===b.kind&&String(a.id)===String(b.id);}
+function isFav(it){for(var i=0;i<FAV.length;i++){if(sameSong(FAV[i],it))return true;}return false;}
+function snap(it){return {kind:it.kind,id:it.id,name:it.name,artist:it.artist,pic:it.pic,pay:it.pay?1:0};}
+function toggleFav(it,ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  if(!it||!it.id){msg('这首缺少编号，无法收藏');return;}
+  if(isFav(it)){var n=[];for(var i=0;i<FAV.length;i++){if(!sameSong(FAV[i],it))n.push(FAV[i]);}FAV=n;msg('已移出自选歌单');}
+  else{FAV.unshift(snap(it));msg('已加入自选歌单');}
+  lsSet('mus_fav',FAV);
+  if(view==='fav'){queue=FAV.slice();if(cur>=queue.length)cur=-1;}
+  render();
+}
+function pushHist(it){
+  if(!it||!it.id)return;
+  var n=[snap(it)];
+  for(var i=0;i<HIST.length;i++){if(!sameSong(HIST[i],it))n.push(HIST[i]);}
+  HIST=n.slice(0,100); lsSet('mus_hist',HIST);
+  if(view==='hist'){queue=HIST.slice();cur=0;}
+}
+function setViewbar(h){var b=$('viewbar');if(h){b.innerHTML=h;b.style.display='block';}else{b.innerHTML='';b.style.display='none';}}
+function showFav(){
+  view='fav'; queue=FAV.slice(); cur=-1; render();
+  setViewbar('自选歌单 · 共 '+FAV.length+' 首');
+  msg(FAV.length?'点任意一首播放，点右侧 ♥ 取消收藏':'自选歌单还是空的，在列表里点歌曲右侧的 ♡ 收藏');
+}
+function showHistBar(){
+  setViewbar('播放记录 · 共 '+HIST.length+' 首<button id="clrHist">清空记录</button>');
+  var c=$('clrHist'); if(c)c.onclick=clearHist;
+}
+function clearHist(){
+  HIST=[]; lsSet('mus_hist',HIST);
+  if(view==='hist'){queue=[];cur=-1;render();showHistBar();}
+  msg('播放记录已清空');
+}
+function showHist(){
+  view='hist'; queue=HIST.slice(); cur=-1; render(); showHistBar();
+  msg(HIST.length?'点任意一首播放':'还没有播放记录，听过的歌会自动记在这里');
+}
+function setSrc(s){SRC=s;$('tabNE').className=(s==='netease'?'on':'');$('tabTX').className=(s==='tencent'?'on':'');}
+$('tabNE').onclick=function(){setSrc('netease');};
+$('tabTX').onclick=function(){setSrc('tencent');};
+function setQ(q){Q=q;$('q320').className=(q==='320'?'on':'');$('qFLAC').className=(q==='flac'?'on':'');msg(q==='flac'?'已切换无损 FLAC（对下一首生效）':'已切换高音质 320k（对下一首生效）');}
+$('q320').onclick=function(){setQ('320');};
+$('qFLAC').onclick=function(){setQ('flac');};
+function render(){
+  var h='';
+  for(var i=0;i<queue.length;i++){
+    var it=queue[i];
+    var fv=isFav(it);
+    h+='<div class="item'+(i===cur?' cur':'')+'" data-i="'+i+'"><img loading="lazy" src="'+esc(it.pic||'')+'"><div><div class="t">'+esc(it.name)+(it.pay?'<span class="badge">付费</span>':'')+'</div><div class="a">'+esc(it.artist)+'</div></div><span class="fav'+(fv?' on':'')+'" data-f="'+i+'">'+(fv?'♥':'♡')+'</span></div>';
+  }
+  $('list').innerHTML=h||'<div style="padding:16px;color:#8b95a3">暂无歌曲</div>';
+  var items=document.querySelectorAll('.item');
+  for(var j=0;j<items.length;j++){items[j].onclick=function(){play(parseInt(this.getAttribute('data-i'),10));};}
+  var fs=document.querySelectorAll('.fav');
+  for(var f=0;f<fs.length;f++){fs[f].onclick=function(e){toggleFav(queue[parseInt(this.getAttribute('data-f'),10)],e);};}
+}
+function search(){
+  var q=$('q').value.replace(/^\s+|\s+$/g,'');
+  if(!q){msg('先输入歌名或歌手');return;}
+  msg('搜索中...');
+  fetch(VK+SRC+'?word='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){
+    var d=j.data||[]; queue=[];
+    for(var i=0;i<d.length;i++){
+      if(SRC==='netease'){queue.push({kind:'ne',id:d[i].id,name:d[i].song,artist:d[i].singer,pic:https(d[i].cover)});}
+      else{queue.push({kind:'tx',id:d[i].id,name:d[i].song,artist:d[i].singer,pic:d[i].cover,pay:(d[i].pay==='付费')});}
+    }
+    cur=-1; view='queue'; setViewbar(''); render(); msg(queue.length?('找到 '+queue.length+' 首'):'没找到，换个关键词试试');
+  }).catch(function(){msg('搜索失败，网络或接口异常');});
+}
+$('go').onclick=search;
+$('q').addEventListener('keydown',function(e){if(e.keyCode===13)search();});
+function loadChart(id){
+  msg('加载榜单...');
+  fetch(MT+'?server=netease&type=playlist&id='+id).then(function(r){return r.json();}).then(function(d){
+    queue=[];
+    for(var i=0;i<d.length;i++){
+      var m=(d[i].url||'').match(/[?&]id=(\d+)/);
+      queue.push({kind:'ne',id:m?m[1]:'',name:d[i].name,artist:d[i].artist,pic:d[i].pic});
+    }
+    cur=-1; view='queue'; setViewbar(''); render(); msg('榜单 '+queue.length+' 首，点任意一首播放');
+  }).catch(function(){msg('榜单加载失败');});
+}
+$('btnFav').onclick=showFav;
+$('btnHist').onclick=showHist;
+var chs=document.querySelectorAll('[data-chart]');
+for(var c=0;c<chs.length;c++){chs[c].onclick=function(){loadChart(this.getAttribute('data-chart'))};}
+function parseLrc(text){
+  lrcLines=[];
+  var rows=(text||'').split('\n');
+  for(var i=0;i<rows.length;i++){
+    var m=rows[i].match(/\[(\d+):(\d+)\.(\d+)\](.*)/);
+    if(m){lrcLines.push({t:parseInt(m[1],10)*60+parseInt(m[2],10)+parseInt(m[3],10)/100,txt:m[4]});}
+  }
+  lrcLines.sort(function(a,b){return a.t-b.t;});
+  drawLrc(-1);
+}
+function drawLrc(idx){
+  if(!lrcLines.length){$('lrc').innerHTML='';return;}
+  var h='';
+  var from=Math.max(0,idx-1), to=Math.min(lrcLines.length,idx+3);
+  for(var i=from;i<to;i++){h+='<div'+(i===idx?' class="on"':'')+'>'+esc(lrcLines[i].txt||'...')+'</div>';}
+  $('lrc').innerHTML=h;
+}
+function loadLrcNE(id,seq){
+  lrcLines=[]; $('lrc').innerHTML='';
+  fetch(GD+'?types=lyric&source=netease&id='+id).then(function(r){return r.json();}).then(function(j){
+    if(seq!==playSeq)return;
+    if(j&&j.lyric){parseLrc(j.lyric);}
+    else{throw new Error('empty');}
+  }).catch(function(){
+    if(seq!==playSeq)return;
+    fetch(MT+'?server=netease&type=lrc&id='+id).then(function(r){return r.text();}).then(function(t){if(seq===playSeq)parseLrc(t);}).catch(function(){});
+  });
+}
+function resolveNE(it,seq){
+  var brs=(Q==='flac')?[999,320]:[320];
+  var k=0;
+  function step(){
+    if(seq!==playSeq)return;
+    if(k>=brs.length){
+      au.src=MT+'?server=netease&type=url&id='+it.id; au.play();
+      msg('此歌高音质取不到，已回落 128k');
+      return;
+    }
+    var br=brs[k]; k++;
+    fetch(GD+'?types=url&source=netease&id='+it.id+'&br='+br).then(function(r){return r.json();}).then(function(j){
+      if(seq!==playSeq)return;
+      if(j&&j.url){
+        au.src=j.url; au.play();
+        msg(br===999?'无损 FLAC 播放中':'320 kbps 高音质播放中');
+      }else{step();}
+    }).catch(function(){step();});
+  }
+  step();
+}
+function play(i){
+  if(i<0||i>=queue.length)return;
+  cur=i; var it=queue[i]; pushHist(it); render();
+  playSeq++; var seq=playSeq;
+  $('ptitle').textContent=it.name; $('psinger').textContent=it.artist;
+  $('pcover').src=it.pic||''; $('play').textContent='⏸';
+  lrcLines=[]; $('lrc').innerHTML='';
+  msg('加载中...');
+  if(it.kind==='ne'){
+    if(it.id){resolveNE(it,seq); loadLrcNE(it.id,seq);}
+    else{msg('这首缺少编号，无法播放');}
+  }
+  else if(it.kind==='tx'){
+    fetch(VK+'tencent?id='+it.id).then(function(r){return r.json();}).then(function(j){
+      if(seq!==playSeq)return;
+      var u=j.data&&j.data.url;
+      if(!u){msg('这首歌暂时取不到播放地址');return;}
+      au.src=https(u); au.play(); msg(it.pay?'付费歌曲，可能只有试听片段':'QQ 音乐 · 128k');
+    }).catch(function(){msg('播放地址获取失败');});
+  }
+}
+$('play').onclick=function(){if(au.src){if(au.paused){au.play();$('play').textContent='⏸';}else{au.pause();$('play').textContent='▶';}}};
+$('next').onclick=function(){if(cur+1<queue.length)play(cur+1);};
+$('prev').onclick=function(){if(cur>0)play(cur-1);};
+au.addEventListener('ended',function(){if(cur+1<queue.length)play(cur+1);else $('play').textContent='▶';});
+au.addEventListener('error',function(){if(cur>=0)msg('这首播放失败（可能付费/下架），试试下一首');});
+au.addEventListener('timeupdate',function(){
+  if(au.duration){$('prog').value=Math.floor(au.currentTime/au.duration*1000);}
+  if(lrcLines.length){
+    var idx=-1;
+    for(var i=0;i<lrcLines.length;i++){if(au.currentTime>=lrcLines[i].t)idx=i;else break;}
+    drawLrc(idx);
+  }
+});
+$('prog').addEventListener('input',function(){if(au.duration)au.currentTime=au.duration*this.value/1000;});
+loadChart('3778678');
+</script>
+</body>
+</html>

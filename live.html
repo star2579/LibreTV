@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电视直播 - LibreTV</title>
+<script src="libs/hls.min.js"></script>
+<script src="libs/mpegts.min.js"></script>
+<style>
+body{margin:0;background:#0b0b0f;color:#fff;font-family:sans-serif}
+header{padding:14px 18px;font-size:20px;font-weight:bold}
+header span{color:#e50914}
+.wrap{display:flex;gap:14px;padding:0 14px 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;flex:1;align-content:start}
+button.ch{background:#1c1c22;color:#fff;border:1px solid #333;border-radius:12px;padding:16px 6px;font-size:16px;cursor:pointer}
+button.ch.active{background:#e50914;border-color:#e50914}
+.player{flex:2.2;min-width:300px}
+video{width:100%;aspect-ratio:16/9;background:#000;border-radius:12px}
+.now{padding:10px 2px;font-size:15px;color:#ccc}
+.err{color:#ff7b7b;font-size:14px;padding:6px 2px;display:none}
+.note{color:#777;font-size:13px;padding:0 18px 16px;line-height:1.6}
+@media (max-width:800px){.wrap{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>LibreTV <span>电视直播</span></header>
+<div class="wrap">
+<div class="player">
+<video id="v" controls autoplay playsinline></video>
+<div class="now" id="now">点右侧频道开始看直播</div>
+<div class="err" id="err">这个频道暂时播不了，换一个试试（直播源偶尔会失效）。</div>
+</div>
+<div class="grid" id="grid"></div>
+</div>
+<div class="note">前排频道为网络直连源（含港澳台），不经过家里，点开即播；江西本地台（江西新闻、都市等）经家里 N1 流畅版，需要家里 N1 和宽带在线。个别频道临时无信号时换一个试试，或告诉 Muse 换源。</div>
+<script>
+var CHANNELS=[
+["翡翠台","https://cdn3.indevs.in/stream/live/jade/"],
+["凤凰中文","api:f7f48462-9b13-485b-8101-7b54716411ec","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Ffhzw"],
+["凤凰资讯","api:7c96b084-60e1-40a9-89c5-682b994fb680","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Ffhzx"],
+["凤凰香港","api:15e02d92-1698-416c-af2f-3e9a872b4d78","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Ffhhk"],
+// == 港澳台环球组 (qd.je relay via ferry, added 2026-10-17; delete this whole block to remove) ==
+["HOY TV","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Fhoy"],
+["HOY国际财经","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Fhoy76"],
+["澳门莲花","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Famlh"],
+["翡翠剧集台","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Ftvbd"],
+["翡翠台1080","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Ffct"],
+["海峡卫视","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Fhxws"],
+["广东珠江","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Fgdzj"],
+["CCTV16","/p?u=https%3A%2F%2Fcdn.qd.je%2F163189%2Fcctv16"],
+["东方卫视","/p?u=http%3A%2F%2Fbp-resource-dfl.bestv.cn%2F148%2F3%2Fvideo.m3u8"],
+];
+var v=document.getElementById('v'),hls=null,flvp=null,nowEl=document.getElementById('now'),errEl=document.getElementById('err');
+function killFlv(){if(flvp){try{flvp.pause();flvp.unload();flvp.detachMediaElement();flvp.destroy()}catch(e){} flvp=null}}
+window.addEventListener('message',function(e){if(e.data==='shell:hide'){if(hls)try{hls.stopLoad()}catch(x){}}else if(e.data==='shell:show'){if(hls)try{hls.startLoad()}catch(x){}}});
+function playHls(url){
+  if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=url;v.play().catch(function(){});return}
+  if(Hls.isSupported()){
+    hls=new Hls({liveSyncDurationCount:3});
+    hls.loadSource(url);hls.attachMedia(v);
+    hls.on(Hls.Events.ERROR,function(e,d){if(d&&d.fatal){errEl.style.display='block'}});
+  }else{errEl.style.display='block'}
+}
+function playFlv(id,alt){
+  fetch('https://api.fengshows.cn/hub/live/auth-url?live_id='+id+'&live_qa=hd').then(function(r){return r.json()}).then(function(j){
+    var loc=(j&&j.data&&j.data.live_url)||'';
+    var m=/\/live\/[^?\s]+\.flv\?.*/.exec(loc);
+    if(!m||!window.mpegts||!mpegts.isSupported()){if(alt)playHls(alt);else errEl.style.display='block';return}
+    flvp=mpegts.createPlayer({type:'flv',isLive:true,url:'https://qitv.fengshows.cn'+m[0]},{enableStashBuffer:true,stashInitialSize:512});
+    flvp.attachMediaElement(v);
+    flvp.on(mpegts.Events.ERROR,function(){killFlv();if(alt)playHls(alt)});
+    flvp.load();
+    var pr=v.play();if(pr&&pr.catch)pr.catch(function(){});
+  }).catch(function(){if(alt)playHls(alt)});
+}
+function play(name,url,btn,alt){
+  document.querySelectorAll('button.ch').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  nowEl.textContent='正在播放：'+name; errEl.style.display='none';
+  if(hls){hls.destroy();hls=null}
+  killFlv();
+  if(url.indexOf('api:')===0){
+    playFlv(url.substring(4),alt);
+    return;
+  }
+  playHls(url);
+}
+var grid=document.getElementById('grid');
+CHANNELS.forEach(function(c){
+  var b=document.createElement('button');b.className='ch';b.textContent=c[0];
+  b.onclick=function(){play(c[0],c[1],b,c[2])};grid.appendChild(b);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车机主页</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1020 url('carbg.jpg') center/cover no-repeat fixed;color:#eee;font-family:sans-serif;min-height:100vh}
+#clock,#date{text-shadow:0 2px 10px rgba(0,0,0,.85)}
+#home{padding:18px 16px 26px}
+#clock{font-size:40px;font-weight:700;letter-spacing:1px}
+#date{font-size:15px;color:#9aa;margin:4px 0 16px}
+#brand{display:inline-block;font-size:32px;font-weight:900;letter-spacing:3px;margin:2px 0 8px;background:linear-gradient(90deg,#ff5f6d,#ffc371,#4ade80,#38bdf8,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 5px rgba(0,0,0,.65))}
+.grid{display:flex;flex-wrap:wrap;gap:12px}
+a.tile{display:block;flex:1 1 30%;min-width:150px;border:0;border-radius:14px;padding:20px 8px 16px;text-align:center;text-decoration:none;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.grid a.tile:nth-child(1){background:linear-gradient(135deg,#2563eb,#7c3aed)}
+.grid a.tile:nth-child(2){background:linear-gradient(135deg,#0d9488,#22c55e)}
+.grid a.tile:nth-child(3){background:linear-gradient(135deg,#db2777,#8b5cf6)}
+.grid a.tile:nth-child(4){background:linear-gradient(135deg,#ea580c,#f59e0b)}
+.grid a.tile:nth-child(5){background:linear-gradient(135deg,#7c3aed,#ec4899)}
+.grid a.tile:nth-child(6){background:linear-gradient(135deg,#dc2626,#f97316)}
+.grid a.tile:nth-child(7){background:linear-gradient(135deg,#1e3a8a,#b45309)}
+a.tile .ico{font-size:36px}
+a.tile .t{font-size:18px;margin-top:8px}
+a.tile .s{font-size:12px;color:rgba(255,255,255,.82);margin-top:3px}
+a.tile:active{filter:brightness(1.25)}
+a.tile.wide{flex:1 1 100%}
+#bar{display:none;height:48px;background:#17171f;border-bottom:1px solid #2c2c38;align-items:center;padding:0 10px;gap:10px}
+#bar.on{display:flex}
+#back{padding:9px 14px;font-size:15px;border:0;border-radius:8px;background:#2a2a35;color:#eee}
+#ttl{font-size:16px;font-weight:700}
+#chip{display:none;margin-left:auto;padding:7px 12px;font-size:13px;border:0;border-radius:8px;background:#54431a;color:#ffd76a}
+#chip.on{display:block}
+#stage{display:none;position:relative;height:calc(100vh - 48px)}
+#stage.on{display:block}
+#stage iframe{width:100%;height:100%;border:0;display:none;background:#000}
+#stage iframe.on{display:block}
+#load{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(20,20,28,.88);border:1px solid #3a3a4a;border-radius:999px;padding:8px 18px;font-size:15px;color:#9cf;display:none;pointer-events:none;z-index:5}
+</style>
+</head>
+<body>
+<div id="home">
+  <div id="brand">PP 的小酷衩</div>
+  <div id="clock">--:--</div>
+  <div id="date"></div>
+  <button id="chip2" onclick="stopBg()" style="display:none;margin:0 0 14px;padding:8px 14px;font-size:14px;border:0;border-radius:8px;background:#54431a;color:#ffd76a">🎵 后台播放中 · 点此停</button>
+  <div class="grid">
+    <a class="tile" href="javascript:void(0)" onclick="go('tv')"><div class="ico">📺</div><div class="t">电视直播</div><div class="s">港台 · 新闻 · 财经</div></a>
+    <a class="tile" href="javascript:void(0)" onclick="go('music')"><div class="ico">🎵</div><div class="t">落雪音乐</div><div class="s">320k · FLAC</div></a>
+    <a class="tile" href="javascript:void(0)" onclick="go('radio')"><div class="ico">📻</div><div class="t">广播电台</div><div class="s">国家台 · 江西台</div></a>
+    <a class="tile" href="javascript:void(0)" onclick="go('podcast')"><div class="ico">🎙</div><div class="t">播客</div><div class="s">十档节目</div></a>
+    <a class="tile" href="javascript:void(0)" onclick="go('drama')"><div class="ico">🎞</div><div class="t">短剧</div><div class="s">如意短剧库</div></a>
+    <a class="tile" style="background:linear-gradient(135deg,#065f46,#ca8a04)" href="javascript:void(0)" onclick="go('quotes')"><div class="ico">📈</div><div class="t">实时行情</div><div class="s">黄金 · 纳指 · 数字货币</div></a>
+    <a class="tile wide" href="javascript:void(0)" onclick="go('libre')"><div class="ico">🎬</div><div class="t">影视 · LibreTV</div><div class="s">电影 · 电视剧 · 动漫</div></a>
+  </div>
+</div>
+<div id="bar">
+  <button id="back" onclick="home()">← 主页</button>
+  <div id="ttl"></div>
+  <button id="chip" onclick="stopBg()">🎵 后台播放中 · 点此停</button>
+</div>
+<div id="stage"><div id="load">加载中…</div></div>
+<script>
+var SEC={
+  tv:{t:'📺 电视直播',u:'/live.html',video:1},
+  music:{t:'🎵 落雪音乐',u:'/music.html',video:0},
+  radio:{t:'📻 广播电台',u:'/radio.html',video:0},
+  podcast:{t:'🎙 播客',u:'/podcast.html',video:0},
+  drama:{t:'🎞 短剧',u:'/drama.html',video:1},
+  quotes:{t:'📈 实时行情',u:'/quotes.html',video:0},
+  libre:{t:'🎬 影视 · LibreTV',u:'/',video:1}
+};
+var frames={},cur=null,bgAudio=null;
+function tick(){
+  var d=new Date(),p=function(n){return (n<10?'0':'')+n};
+  var w='日一二三四五六'.charAt(d.getDay());
+  document.getElementById('clock').textContent=p(d.getHours())+':'+p(d.getMinutes());
+  document.getElementById('date').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日 星期'+w;
+}
+tick();setInterval(tick,20000);
+function mediaIn(f){
+  try{return f.contentWindow.document.querySelectorAll('audio,video')}catch(e){return []}
+}
+function pauseIn(f){
+  var m=mediaIn(f);
+  for(var i=0;i<m.length;i++){try{m[i].pause()}catch(e){}}
+}
+function playingAudioIn(f){
+  var m=mediaIn(f);
+  for(var i=0;i<m.length;i++){if(m[i].tagName==='AUDIO'&&!m[i].paused)return true}
+  return false;
+}
+function go(id){
+  var s=SEC[id];
+  if(cur&&cur!==id){
+    if(SEC[cur].video){pauseIn(frames[cur])}
+    else if(!s.video){pauseIn(frames[cur]);bgAudio=null}
+  }
+  document.getElementById('home').style.display='none';
+  document.getElementById('bar').className='on';
+  document.getElementById('stage').className='on';
+  document.getElementById('ttl').textContent=s.t;
+  var f=frames[id];
+  if(!f){
+    f=document.createElement('iframe');
+    f.setAttribute('allowfullscreen','');
+    f.setAttribute('allow','autoplay; fullscreen');
+    var lo=document.getElementById('load');
+    lo.style.display='block';
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      var done=false;
+      try{done=f.contentWindow.document.readyState!=='loading'}catch(e){}
+      if(done||tries>12){lo.style.display='none';clearInterval(iv)}
+    },400);
+    f.src=s.u;
+    document.getElementById('stage').appendChild(f);
+    frames[id]=f;
+  }
+  for(var k in frames){frames[k].className=(k===id?'on':'')}
+  cur=id;
+  for(var k2 in frames){try{frames[k2].contentWindow.postMessage(k2===id?'shell:show':'shell:hide','*')}catch(e){}}
+  refreshChip();
+}
+function home(){
+  if(cur&&SEC[cur].video){pauseIn(frames[cur])}
+  document.getElementById('stage').className='';
+  document.getElementById('bar').className='';
+  document.getElementById('home').style.display='block';
+  cur=null;
+  for(var k in frames){try{frames[k].contentWindow.postMessage('shell:hide','*')}catch(e){}}
+  refreshChip();
+}
+function refreshChip(){
+  bgAudio=null;
+  for(var k in frames){
+    if(k!==cur&&playingAudioIn(frames[k])){bgAudio=k;break}
+  }
+  document.getElementById('chip').className=bgAudio?'on':'';
+  document.getElementById('chip2').style.display=bgAudio?'block':'none';
+}
+function stopBg(){
+  if(bgAudio){pauseIn(frames[bgAudio]);bgAudio=null}
+  document.getElementById('chip').className='';
+  document.getElementById('chip2').style.display='none';
+}
+setInterval(refreshChip,3000);
+</script>
+</body>
+</html>
