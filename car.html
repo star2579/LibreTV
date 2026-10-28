@@ -47,6 +47,7 @@ a.tile.wide{flex:1 1 100%}
   <button id="chip2" onclick="stopBg()" style="display:none;margin:0 0 14px;padding:8px 14px;font-size:14px;border:0;border-radius:8px;background:#54431a;color:#ffd76a">🎵 后台播放中 · 点此停</button>
   <div class="grid">
     <a class="tile" href="javascript:void(0)" onclick="go('tv')"><div class="ico">📺</div><div class="t">电视直播</div><div class="s">港台 · 新闻 · 财经</div></a>
+    <a class="tile" href="javascript:void(0)" onclick="go('ysplow')"><div class="ico">🐢</div><div class="t">YSP低速</div><div class="s">低码率 · 省流量</div></a>
     <a class="tile" href="javascript:void(0)" onclick="go('music')"><div class="ico">🎵</div><div class="t">落雪音乐</div><div class="s">320k · FLAC</div></a>
     <a class="tile" href="javascript:void(0)" onclick="go('radio')"><div class="ico">📻</div><div class="t">广播电台</div><div class="s">国家台 · 江西台</div></a>
     <a class="tile" href="javascript:void(0)" onclick="go('podcast')"><div class="ico">🎙</div><div class="t">播客</div><div class="s">十档节目</div></a>
@@ -64,6 +65,7 @@ a.tile.wide{flex:1 1 100%}
 <script>
 var SEC={
   tv:{t:'📺 电视直播',u:'/live.html',video:1},
+  ysplow:{t:'🐢 YSP低速',u:'/ysp-low.html',video:1},
   music:{t:'🎵 落雪音乐',u:'/music.html',video:0},
   radio:{t:'📻 广播电台',u:'/radio.html',video:0},
   podcast:{t:'🎙 播客',u:'/podcast.html',video:0},
